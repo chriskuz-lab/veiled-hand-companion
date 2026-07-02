@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>Veiled Hand Companion</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+  :root{
+    --bg:#131017;
+    --panel:#1d1823;
+    --panel2:#272031;
+    --panel3:#322a3e;
+    --line:#3b3245;
+    --text:#eae2d3;
+    --dim:#9d91a8;
+    --gold:#c9a24b;
+    --gold-soft:#c9a24b33;
+    --red:#c2504a;
+    --green:#6fa06a;
+    --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    --sans:-apple-system,'Segoe UI',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    background-image:
+      radial-gradient(ellipse at 50% -5%, #251d31 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 110%, #1b1524 0%, transparent 50%);
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:var(--serif);
+    min-height:100vh;
+  }
+  body.player-mode{padding-bottom:96px}
+  button{font-family:inherit;color:inherit;cursor:pointer}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  header{text-align:center;padding:20px 16px 8px;position:relative}
+  .sync{
+    position:absolute;top:12px;right:14px;font-family:var(--sans);font-size:10px;letter-spacing:.08em;
+    color:var(--dim);display:flex;align-items:center;gap:5px;
+  }
+  .sync .dot{width:8px;height:8px;border-radius:50%;background:#6b6076;transition:background .3s}
+  .sync.on .dot{background:var(--green);box-shadow:0 0 6px #6fa06a88}
+  header h1{font-variant:small-caps;letter-spacing:.26em;font-size:20px;color:var(--gold);font-weight:normal}
+  header .sub{font-size:12px;color:var(--dim);letter-spacing:.12em;margin-top:4px;font-style:italic}
+  .orn{color:#5c5068;font-size:11px;letter-spacing:.5em;margin-top:8px;user-select:none}
+
+  .wrap{max-width:540px;margin:0 auto;padding:0 14px}
+  .wrap.wide{max-width:1440px;padding:0 20px}
+
+  /* ---------- cards ---------- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .card h2{
+    font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);
+    font-weight:normal;margin-bottom:12px;font-family:var(--sans);
+  }
+  .num{font-variant-numeric:tabular-nums}
+
+  /* ---------- picker ---------- */
+  .picker{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+  .pick-card{
+    display:flex;align-items:center;gap:16px;background:var(--panel);border:1px solid var(--line);
+    border-left:5px solid var(--accent,#888);border-radius:12px;padding:14px 16px;cursor:pointer;
+    width:100%;text-align:left;transition:transform .08s;
+  }
+  .pick-card:active{transform:scale(.98)}
+  .sigil{
+    width:52px;height:52px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+    font-size:23px;font-variant:small-caps;background:var(--panel2);border:2px solid var(--accent,#888);
+    color:var(--accent,#888);
+  }
+  .pick-info{flex:1;min-width:0}
+  .pick-card .nm{font-size:19px;font-variant:small-caps;letter-spacing:.06em}
+  .pick-card .rl{font-size:12.5px;color:var(--dim);font-style:italic;margin-top:1px}
+  .pick-hp{display:flex;align-items:center;gap:8px;margin-top:7px}
+  .pick-hp .bar{flex:1;height:6px;background:#15111c;border-radius:4px;overflow:hidden;border:1px solid #2b2434}
+  .pick-hp .fill{height:100%;border-radius:4px;transition:width .3s,background .3s}
+  .pick-hp .lbl{font-size:11px;color:var(--dim);font-family:var(--sans);letter-spacing:.05em;flex:none}
+  .pick-card.dm-entry{border-left-color:var(--gold);background:linear-gradient(100deg,#241d2a,var(--panel))}
+  .pick-card.dm-entry .sigil{border-style:double;border-width:3px}
+  .cond-dots{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+  .cond-dot{font-size:10px;font-family:var(--sans);letter-spacing:.06em;color:#d4b46a;background:#c9a24b1a;border:1px solid #c9a24b40;border-radius:20px;padding:1px 7px}
+
+  /* ---------- topbar ---------- */
+  .topbar{display:flex;align-items:center;gap:12px;margin:8px 0 14px}
+  .back{background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:8px;padding:8px 14px;font-size:13px}
+  .char-name{font-size:22px;font-variant:small-caps;letter-spacing:.06em}
+  .char-role{font-size:12px;color:var(--dim);font-style:italic}
+
+  /* ---------- HP ---------- */
+  .hp-flex{display:flex;align-items:center;gap:10px}
+  .hp-mid{flex:1;text-align:center;min-width:0}
+  .hp-num{font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+  .hp-num .max{font-size:18px;color:var(--dim)}
+  .hp-num .tp{font-size:16px;color:var(--gold);margin-left:6px}
+  .hp-bar{height:12px;background:#15111c;border-radius:6px;margin-top:9px;overflow:hidden;border:1px solid #2b2434;position:relative}
+  .hp-fill{height:100%;border-radius:6px;transition:width .3s,background .3s}
+  .hp-temp-fill{position:absolute;top:0;height:100%;background:repeating-linear-gradient(45deg,#c9a24b88 0 4px,#c9a24b44 4px 8px);transition:width .3s,left .3s}
+  .hp-state{font-size:12.5px;margin-top:7px;color:var(--dim);font-style:italic;min-height:16px}
+  .hp-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  .hp-b{
+    padding:12px 0;border-radius:10px;border:1px solid var(--line);background:var(--panel2);
+    font-size:17px;font-variant-numeric:tabular-nums;
+  }
+  .hp-b:active{background:var(--panel3)}
+  .hp-b.dmg{color:#e08e88;border-color:#5a3a3a}
+  .hp-b.heal{color:#a5c8a0;border-color:#3d5039}
+  .temp-row{display:flex;justify-content:center;gap:10px;margin-top:12px;align-items:center;font-size:13px;color:var(--dim)}
+  .mini-btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 13px;font-size:15px}
+  .downed{animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #c2504a00}50%{box-shadow:0 0 18px 2px #c2504a55}}
+
+  /* ---------- death saves ---------- */
+  .ds{margin-top:14px;border-top:1px dashed #5a3a3a;padding-top:12px}
+  .ds-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px}
+  .ds-row .k{font-size:11px;font-family:var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);width:74px;text-align:right}
+  .ds-pip{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:transparent}
+  .ds-pip.s.on{background:var(--green);border-color:var(--green)}
+  .ds-pip.f.on{background:var(--red);border-color:var(--red)}
+  .ds-note{text-align:center;font-size:12.5px;font-style:italic;color:var(--dim);margin-top:10px}
+  .ds-roll{display:block;margin:12px auto 0;background:var(--panel2);border:1px solid #5a3a3a;border-radius:10px;padding:10px 22px;font-size:15px}
+
+  /* ---------- conditions ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    font-family:var(--sans);font-size:12px;letter-spacing:.05em;padding:6px 13px;border-radius:20px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--dim);
+  }
+  .chip.on{background:var(--gold-soft);border-color:var(--gold);color:#e5c87e}
+
+  /* ---------- quick stats ---------- */
+  .qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+  .q{background:var(--panel2);border-radius:10px;padding:10px 4px}
+  .q .v{font-size:21px;color:var(--gold);font-variant-numeric:tabular-nums}
+  .q .k{font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin-top:2px;font-family:var(--sans)}
+  .abil{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;text-align:center;margin-top:10px}
+  .abil .a{background:var(--panel2);border-radius:8px;padding:8px 2px}
+  .abil .a .v{font-size:16px;font-variant-numeric:tabular-nums}
+  .abil .a .k{font-size:9px;letter-spacing:.1em;color:var(--dim);font-family:var(--sans)}
+
+  /* ---------- advantage toggle ---------- */
+  .adv-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px;font-family:var(--sans)}
+  .adv-seg button{padding:9px 0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:var(--panel2);border:none;color:var(--dim)}
+  .adv-seg button.on{background:var(--gold-soft);color:#e5c87e}
+  .adv-seg button.on.dis{background:#c2504a26;color:#e08e88}
+
+  /* ---------- roll buttons ---------- */
+  .roll-grid{display:flex;flex-direction:column;gap:8px}
+  .roll-btn{
+    display:flex;justify-content:space-between;align-items:center;width:100%;gap:10px;
+    background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:12px 16px;color:var(--text);font-size:16px;text-align:left;min-height:48px;
+  }
+  .roll-btn:active{border-color:var(--gold)}
+  .roll-btn .mod{color:var(--gold);font-size:16px;flex:none;font-variant-numeric:tabular-nums}
+  .roll-btn.attack{border-color:#5a3a3a}
+  .roll-btn small{display:block;color:var(--dim);font-size:12px;font-style:italic}
+
+  /* ---------- features ---------- */
+  .feat{border-top:1px solid var(--line);padding:12px 2px}
+  .feat:first-of-type{border-top:none;padding-top:2px}
+  .feat .fname{font-size:16px;font-variant:small-caps;letter-spacing:.04em}
+  .feat .fdesc{font-size:13.5px;color:var(--dim);line-height:1.55;margin-top:3px}
+  .pips{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+  .pip{width:26px;height:26px;border-radius:50%;border:2px solid var(--gold);background:transparent}
+  .pip.used{background:#3a3242;border-color:#524760}
+  .pips .plabel{font-size:11px;color:var(--dim);margin-left:4px;font-family:var(--sans);letter-spacing:.08em}
+
+  /* ---------- gear ---------- */
+  .gear li{margin-left:18px;font-size:14px;line-height:1.7}
+  .gear li b{font-variant:small-caps;font-weight:normal;color:var(--gold)}
+  .gear li span{color:var(--dim)}
+  .joke{margin-top:12px;font-style:italic;color:var(--dim);font-size:13.5px;text-align:center}
+
+  /* ---------- dice tray ---------- */
+  .tray{
+    position:fixed;left:0;right:0;bottom:0;background:#17121ff2;border-top:1px solid var(--line);
+    padding:12px 16px;backdrop-filter:blur(8px);z-index:50;
+  }
+  .tray-inner{max-width:540px;margin:0 auto;display:flex;align-items:center;gap:14px;min-height:52px}
+  .dice-pair{display:flex;gap:14px;flex:none}
+  .die{
+    width:50px;height:50px;display:flex;align-items:center;justify-content:center;
+    font-size:21px;color:var(--gold);border:2px solid var(--gold);border-radius:12px;transform:rotate(45deg);
+    font-variant-numeric:tabular-nums;
+  }
+  .die span{transform:rotate(-45deg)}
+  .die.crit{border-color:var(--green);color:var(--green);box-shadow:0 0 14px #6fa06a66}
+  .die.fumble{border-color:var(--red);color:var(--red);box-shadow:0 0 14px #c2504a66}
+  .die.dropped{opacity:.32;border-color:var(--dim);color:var(--dim);box-shadow:none}
+  .tray-text{flex:1;min-width:0}
+  .tray-text .big{font-size:16px;line-height:1.35}
+  .tray-text .small{font-size:12px;color:var(--dim);font-style:italic}
+  @keyframes shake{0%{transform:rotate(45deg)}25%{transform:rotate(38deg) translate(-2px,1px)}50%{transform:rotate(52deg) translate(2px,-1px)}75%{transform:rotate(41deg) translate(-1px,-1px)}100%{transform:rotate(45deg)}}
+  .die.rolling{animation:shake .35s linear}
+  @media (prefers-reduced-motion:reduce){
+    .die.rolling{animation:none}
+    .downed{animation:none;box-shadow:0 0 18px 2px #c2504a55}
+    html{scroll-behavior:auto}
+  }
+
+  .reset{width:100%;background:none;border:1px dashed var(--line);color:var(--dim);border-radius:10px;
+    padding:11px;font-size:12px;font-family:var(--sans);letter-spacing:.12em;margin-bottom:22px;text-transform:uppercase}
+
+  details.rules{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:0 0 20px}
+  details.rules summary{cursor:pointer;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-family:var(--sans)}
+  details.rules .r{font-size:14px;line-height:1.75;margin-top:10px}
+  details.rules .r b{color:var(--gold);font-weight:normal;font-variant:small-caps}
+
+  /* ================= DM SCREEN ================= */
+  .dm-vitals{
+    display:flex;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap;
+  }
+  .dm-vitals .stat{font-family:var(--sans);font-size:12px;letter-spacing:.06em;color:var(--dim)}
+  .dm-vitals .stat b{display:block;font-family:var(--serif);font-size:22px;color:var(--text);font-weight:normal;font-variant-numeric:tabular-nums;letter-spacing:0}
+  .dm-vitals .party-bar{flex:1;min-width:140px;height:10px;background:#15111c;border-radius:5px;overflow:hidden;border:1px solid #2b2434}
+  .dm-vitals .party-fill{height:100%;transition:width .3s,background .3s}
+  .dm-vitals .alert{color:#e08e88;font-style:italic;font-size:13px}
+
+  .dm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:14px}
+  .dm-card{
+    background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--accent,#888);
+    border-radius:12px;padding:13px 14px;
+  }
+  .dm-card.is-down{border-color:#6b3a37;background:#221a1e}
+  .dm-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .dm-head .nm{font-size:17px;font-variant:small-caps;letter-spacing:.05em;color:var(--accent)}
+  .dm-head .meta{font-size:11px;color:var(--dim);font-family:var(--sans);letter-spacing:.05em;white-space:nowrap}
+  .dm-hp-row{display:flex;align-items:baseline;gap:8px;margin-top:8px}
+  .dm-hp-row .hpn{font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+  .dm-hp-row .hpm{font-size:14px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .dm-hp-row .tmp{font-size:13px;color:var(--gold);margin-left:auto;font-variant-numeric:tabular-nums}
+  .dm-bar{height:9px;background:#15111c;border-radius:5px;overflow:hidden;border:1px solid #2b2434;margin-top:7px;position:relative}
+  .dm-fill{height:100%;transition:width .3s,background .3s}
+  .dm-ctl{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px}
+  .dm-ctl button{padding:8px 0;border-radius:8px;border:1px solid var(--line);background:var(--panel2);font-size:13px;font-variant-numeric:tabular-nums;font-family:var(--sans)}
+  .dm-ctl .dmg{color:#e08e88;border-color:#54393a}
+  .dm-ctl .heal{color:#a5c8a0;border-color:#3a4a37}
+  .dm-ctl .tmpb{color:#d4b46a}
+  .dm-uses{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:10px}
+  .dm-use{font-family:var(--sans);font-size:10.5px;letter-spacing:.05em;color:var(--dim);display:flex;align-items:center;gap:5px}
+  .dm-use .dots{display:flex;gap:3px}
+  .dm-use .d{width:9px;height:9px;border-radius:50%;border:1px solid var(--gold);display:inline-block}
+  .dm-use .d.used{background:#3a3242;border-color:#524760}
+  .dm-conds{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+  .dm-conds .chip{padding:3px 9px;font-size:10.5px}
+  .dm-ds{font-family:var(--sans);font-size:11px;letter-spacing:.06em;margin-top:9px;color:#e08e88}
+  .dm-ds .d{width:10px;height:10px;border-radius:50%;border:1px solid var(--line);display:inline-block;vertical-align:-1px;margin-right:2px}
+  .dm-ds .d.s{background:var(--green);border-color:var(--green)}
+  .dm-ds .d.f{background:var(--red);border-color:var(--red)}
+
+  /* desktop-first DM layout: party board left, sticky command rail right */
+  .dm-body{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:14px;align-items:start}
+  .dm-rail{position:sticky;top:12px;display:flex;flex-direction:column;gap:14px}
+  .dm-rail .card{margin-bottom:0}
+  .dm-rail .feed{max-height:calc(100vh - 460px);min-height:180px}
+  @media (max-width:1023px){
+    .dm-body{grid-template-columns:1fr}
+    .dm-rail{position:static}
+    .dm-rail .feed{max-height:420px}
+  }
+  .feed{max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+  .feed-item{display:flex;gap:10px;padding:8px 4px;border-bottom:1px solid #2a2333;align-items:baseline}
+  .feed-item:last-child{border-bottom:none}
+  .feed-item .who{flex:none;font-variant:small-caps;font-size:14px;width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .feed-item .what{flex:1;font-size:13px;color:var(--dim);line-height:1.4}
+  .feed-item .what b{color:var(--text);font-weight:normal}
+  .feed-item .when{flex:none;font-size:10px;color:#6b6076;font-family:var(--sans)}
+  .feed-item.crit .what b{color:var(--green)}
+  .feed-item.fumble .what b{color:var(--red)}
+  .feed-empty{color:var(--dim);font-style:italic;font-size:13px;padding:10px 4px}
+
+  .init-list{display:flex;flex-direction:column;gap:6px}
+  .init-row{
+    display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:9px;padding:8px 12px;
+  }
+  .init-row.active{border-color:var(--gold);background:#2b2331;box-shadow:0 0 10px #c9a24b22}
+  .init-row .score{font-size:19px;color:var(--gold);width:32px;text-align:center;font-variant-numeric:tabular-nums;flex:none}
+  .init-row .inm{flex:1;font-variant:small-caps;font-size:15px}
+  .init-row .tag{font-size:10px;font-family:var(--sans);letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+  .init-row .x{background:none;border:none;color:#6b6076;font-size:16px;padding:2px 6px}
+  .init-add{display:flex;gap:8px;margin-top:10px}
+  .init-add input{
+    background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);
+    padding:9px 10px;font-family:inherit;font-size:14px;min-width:0;
+  }
+  .init-add input::placeholder{color:#6b6076}
+  .init-add .nmi{flex:1}
+  .init-add .sci{width:64px;text-align:center}
+  .init-btns{display:flex;gap:8px;margin-top:10px}
+  .init-btns button{flex:1;padding:10px 0;border-radius:9px;border:1px solid var(--line);background:var(--panel2);font-size:13px;font-family:var(--sans);letter-spacing:.08em}
+  .init-btns .go{border-color:var(--gold);color:#e5c87e}
+  .dm-note{font-size:11.5px;color:#6b6076;font-style:italic;margin-top:10px;line-height:1.5}
+  .hidden{display:none}
+</style>
+
+<header>
+  <div class="sync" id="syncDot"><span class="dot"></span><span id="syncTxt">connecting&hellip;</span></div>
+  <h1>Ashes of the Veiled Hand</h1>
+  <div class="sub" id="subline">player companion &middot; session 2: The Ninth Lock</div>
+  <div class="orn">&#10022; &#10022; &#10022;</div>
+</header>
+
+<div class="wrap" id="view"></div>
+
+<div class="tray hidden" id="tray">
+  <div class="tray-inner">
+    <div class="dice-pair">
+      <div class="die" id="dieBox"><span id="dieFace">20</span></div>
+      <div class="die hidden" id="dieBox2"><span id="dieFace2">20</span></div>
+    </div>
+    <div class="tray-text">
+      <div class="big" id="trayBig">Tap any skill or attack to roll</div>
+      <div class="small" id="traySmall">Results appear here</div>
+    </div>
+    <button class="mini-btn" onclick="plainD20()">d20</button>
+  </div>
+</div>
+
+<script>
+/* ================= DATA ================= */
+const CHARS = [
+  {
+    id:"papi", name:"Papi Chulo", player:"Spencer", accent:"#c96f3b",
+    role:"The Protector, Street Medic, Reluctant Muscle",
+    ac:16, hpMax:24, init:"+1", atk:5, dmg:"1d8+3", dmgLabel:"Aztec Gauntlets 1d8+3",
+    abil:{STR:"+3",DEX:"+1",CON:"+3",INT:"+0",WIS:"+1",CHA:"+0"},
+    skills:[["Athletics",5],["Intimidation",2],["Perception",3],["Insight",3]],
+    critOn:19, sneak:null,
+    feats:[
+      {n:"Second Wind", d:"Once per game: heal yourself 1d10 + 3 HP.", uses:1, key:"sw", roll:"1d10+3"},
+      {n:"Action Surge", d:"Once per game: take one extra action on your turn.", uses:1, key:"as"},
+      {n:"Improved Critical", d:"Your attacks crit on a 19 or 20."},
+      {n:"Protection", d:"Once per round, when an enemy attacks an ally near you, give that enemy disadvantage."}
+    ],
+    gear:[["Aztec Gauntlets","for when diplomacy fails"],["Rescue Carrier","oversized backpack for hauling injured friends"],["Mag Light","heavy duty, also persuasive"],["Moc Toe Boots","for stomping trouble and breaking down doors"]],
+    joke:"&ldquo;This ride's over, amigo.&rdquo; Papi insists he is not the muscle."
+  },
+  {
+    id:"penny", name:"Penelope Penbrook", player:"Rachael", accent:"#b85a8f",
+    role:"The Talker, Bard, College of Lore",
+    ac:13, hpMax:19, init:"+2", atk:4, dmg:"1d6+2", dmgLabel:"Improvised elegance 1d6+2",
+    abil:{STR:"-1",DEX:"+2",CON:"+1",INT:"+1",WIS:"+1",CHA:"+3"},
+    skills:[["Persuasion",7],["Deception",7],["Performance",5],["Stealth",4],["Insight",3],["History",3]],
+    critOn:20, sneak:null,
+    feats:[
+      {n:"Bardic Inspiration", d:"Three per game: give another player 1d6 to add to any roll.", uses:3, key:"bi", roll:"1d6"},
+      {n:"Cutting Words", d:"Three per game: subtract 1d6 from an enemy's attack, damage, or check.", uses:3, key:"cw", roll:"1d6"},
+      {n:"Jack of All Trades", d:"Untrained skill? Add +1 anyway."},
+      {n:"Expertise", d:"Persuasion and Deception bonuses already include this."}
+    ],
+    gear:[["Persuasive Lipstick","freshly applied: +3 on a persuasion attempt"],["Compact Mirror","see behind you, blind a threat"],["Hair Pins","fine, sharp, poisonable"],["Sister's Diary","the only proof she exists"]],
+    joke:"Charm first. Manipulate if necessary."
+  },
+  {
+    id:"claire", name:"Claire Ash", player:"Mary", accent:"#7a6fb0",
+    role:"The Investigator, Ritual Studies Professor",
+    ac:13, hpMax:18, init:"+2", atk:4, dmg:"1d6+2", dmgLabel:"Throwing Stars 1d6+2 (range 20/60)",
+    abil:{STR:"+0",DEX:"+2",CON:"+1",INT:"+3",WIS:"+2",CHA:"+0"},
+    skills:[["Investigation",7],["Insight",6],["History",5],["Occult Lore",5],["Perception",4]],
+    critOn:20, sneak:"2d6",
+    feats:[
+      {n:"Sneak Attack", d:"Once per turn: +2d6 damage if an ally is within 5 ft of the target, you attack from hiding, or you have advantage."},
+      {n:"Cunning Action", d:"Bonus action: Hide, Dash, or Disengage."},
+      {n:"Eye for Detail", d:"Bonus action: quick Perception check to spot something hidden, or Investigation to understand a clue."},
+      {n:"Ear for Deceit", d:"On Insight rolls to detect lies, a d20 roll of 7 or lower counts as 8."}
+    ],
+    gear:[["Professor's Satchel","papers, books, notes"],["Magnifying Glass","and a dissection kit"],["Lockpicks","plus chalk and a crowbar"],["Folding Map of the City","annotated"]],
+    joke:"&ldquo;It was probably a coincidence. I've spent my life proving it isn't.&rdquo;"
+  },
+  {
+    id:"sevro", name:"Sevro Vale", player:"Justin", accent:"#5f9ea0",
+    role:"The Scout, Locksmith, Reluctant Hero",
+    ac:15, hpMax:18, init:"+3", atk:6, dmg:"1d8+3", dmgLabel:"Precise strike 1d8+3",
+    abil:{STR:"+0",DEX:"+3",CON:"+2",INT:"+2",WIS:"+1",CHA:"+0"},
+    skills:[["Investigation",7],["Stealth",6],["Locks and Devices",6],["Perception",4]],
+    critOn:20, sneak:"2d6",
+    feats:[
+      {n:"Sneak Attack", d:"Once per turn: +2d6 damage if an ally is within 5 ft of the target, you attack from hiding, or you have advantage."},
+      {n:"Cunning Action", d:"Bonus action: Hide, Dash, or Disengage."},
+      {n:"Fast Hands", d:"Use an object, pick a lock, or disarm a simple trap as a bonus action."}
+    ],
+    gear:[["Lock Picks","sets of two"],["Brass Oil Flask","the WD-40. &ldquo;Hold on.&rdquo;"],["Flame Bottle","emergencies only. Probably."],["Notebook and Chalk","symbols, sketches, impossible theories"],["The Baseball","he does not remember why he keeps it. He keeps it."]],
+    joke:"&ldquo;Let's try this the civilized way first.&rdquo;"
+  },
+  {
+    id:"fuego", name:"Me Encanta Fuego", player:"Xuxa", accent:"#a83f3f",
+    role:"The Healer, Wild Rescuer, Hot Mess Mama",
+    ac:15, hpMax:21, init:"+2", atk:4, dmg:"1d6+2", dmgLabel:"Whatever is in reach 1d6+2",
+    abil:{STR:"+0",DEX:"+2",CON:"+2",INT:"+1",WIS:"+3",CHA:"+1"},
+    skills:[["Medicine",7],["Perception",5],["Insight",5],["Persuasion",3],["Religion",3]],
+    critOn:20, sneak:null,
+    feats:[
+      {n:"Healer (Miracle Mist)", d:"Three per game: action to heal an ally you can touch for 1d6 + 7 HP.", uses:3, key:"heal", roll:"1d6+7"},
+      {n:"Stabilize", d:"Ally at 0 HP: action, Medicine check DC 10. Success: they stop dying."},
+      {n:"Cunning Action", d:"Bonus action: Hide, Dash, or Disengage."},
+      {n:"Spring-Loaded Boots", d:"+5 on acrobatic movement. Walls are a suggestion."}
+    ],
+    gear:[["Miracle Mist","the good stuff, three charges"],["Spring-Loaded Boots","boing"],["Utility Belt","does everything"],["Road-Worn Rescue Vibe","she can't pass a wound or a crooked painting without fixing it"]],
+    joke:"&ldquo;No mess, no stress, me fix it!&rdquo;"
+  }
+];
+const CONDITIONS = ["Inspired","Hidden","Poisoned","Frightened","Restrained","Prone","Blinded","Stunned","Charmed"];
+
+/* ================= STATE + LIVE SYNC ================= */
+const KEY = "vh_companion_v2";
+const store = {
+  load(){ try{ return JSON.parse(localStorage.getItem(KEY))||{} }catch(e){ return {} } },
+  save(s){ try{ localStorage.setItem(KEY, JSON.stringify(s)) }catch(e){} }
+};
+let state = store.load();
+if(!state.log) state.log = [];
+if(!state.npcs) state.npcs = [];
+if(!state.initRolls) state.initRolls = {};
+if(state.turnIdx===undefined) state.turnIdx = -1;
+
+/* ---- live table channel (ntfy.sh pub/sub) ---- */
+const TOPIC = "vh-ninthlock-q3v8mk2trz";       // shared table channel; the URL is the key
+const NTFY = "https://ntfy.sh/" + TOPIC;
+const CID = Math.random().toString(36).slice(2,10); // this tab's id, to ignore our own echoes
+let pendingLog = [];
+
+let bc = null;
+try{ bc = new BroadcastChannel("vh_live"); }catch(e){}
+
+function commit(diff){
+  diff = diff || {};
+  const ts = Date.now();
+  (diff.cids||[]).forEach(cid=>{ const s = cs(byId(cid)); s.mt = ts; });
+  if(diff.combat) state.combatMt = ts;
+  if(diff.clearLog) state.logClearedAt = ts;
+  store.save(state);
+  if(bc) bc.postMessage("sync");
+  publish(diff, ts);
+  render();
+}
+
+function publish(diff, ts){
+  const msg = {src:CID, ts};
+  if(diff.cids && diff.cids.length){ msg.chars = {}; diff.cids.forEach(cid=>{ msg.chars[cid] = state[cid]; }); }
+  if(diff.combat) msg.combat = {npcs:state.npcs, initRolls:state.initRolls, turnIdx:state.turnIdx, mt:state.combatMt};
+  if(diff.clearLog) msg.clearLog = ts;
+  if(pendingLog.length) msg.logAdd = pendingLog.splice(0);
+  if(!msg.chars && !msg.combat && !msg.logAdd && !msg.clearLog) return;
+  fetch(NTFY, {method:"POST", body:JSON.stringify(msg)}).catch(()=>{});
+}
+
+/* every device announces its full known state on load and periodically, so
+   late joiners and reconnects self-heal even after the channel cache expires */
+function announce(){
+  const msg = {src:CID, ts:Date.now(), chars:{},
+    combat:{npcs:state.npcs, initRolls:state.initRolls, turnIdx:state.turnIdx, mt:state.combatMt||0}};
+  CHARS.forEach(c=>{ if(state[c.id] && state[c.id].mt) msg.chars[c.id] = state[c.id]; });
+  if(state.logClearedAt) msg.clearLog = state.logClearedAt;
+  fetch(NTFY, {method:"POST", body:JSON.stringify(msg)}).catch(()=>{});
+}
+
+function mergeRemote(m){
+  let dirty = false;
+  if(m.chars) for(const cid of Object.keys(m.chars)){
+    const c = byId(cid); if(!c) continue;
+    const rc = m.chars[cid], lc = cs(c);
+    if((rc.mt||0) > (lc.mt||0)){ state[cid] = rc; dirty = true; }
+  }
+  if(m.combat && (m.combat.mt||0) > (state.combatMt||0)){
+    state.npcs = m.combat.npcs||[]; state.initRolls = m.combat.initRolls||{};
+    state.turnIdx = (m.combat.turnIdx===undefined)? -1 : m.combat.turnIdx;
+    state.combatMt = m.combat.mt; dirty = true;
+  }
+  if(m.clearLog && m.clearLog > (state.logClearedAt||0)){
+    state.logClearedAt = m.clearLog;
+    state.log = state.log.filter(e=>e.t > m.clearLog);
+    dirty = true;
+  }
+  if(m.logAdd) for(const e of m.logAdd){
+    if(e.t <= (state.logClearedAt||0)) continue;
+    if(!state.log.some(x=>x.id===e.id)){ state.log.push(e); dirty = true; }
+  }
+  if(dirty){
+    state.log.sort((a,b)=>b.t-a.t);
+    if(state.log.length>40) state.log.length = 40;
+    store.save(state);
+    if(bc) bc.postMessage("sync");
+    render();
+  }
+}
+
+function setLive(on){
+  const el = document.getElementById("syncDot");
+  el.classList.toggle("on", on);
+  document.getElementById("syncTxt").textContent = on ? "live table" : "reconnecting…";
+}
+
+let es = null;
+function connectLive(){
+  if(!window.EventSource) return;
+  try{ es = new EventSource(NTFY + "/sse?since=all"); }catch(e){ return }
+  es.onopen = ()=> setLive(true);
+  es.onerror = ()=> setLive(false); /* EventSource auto-reconnects */
+  es.onmessage = ev=>{
+    try{
+      const n = JSON.parse(ev.data);
+      const m = JSON.parse(n.message);
+      if(m && m.src !== CID) mergeRemote(m);
+    }catch(e){}
+  };
+}
+function absorb(){
+  state = store.load();
+  if(!state.log) state.log = [];
+  if(!state.npcs) state.npcs = [];
+  if(!state.initRolls) state.initRolls = {};
+  if(state.turnIdx===undefined) state.turnIdx = -1;
+  render();
+}
+if(bc) bc.onmessage = absorb;
+window.addEventListener("storage", e=>{ if(e.key===KEY) absorb(); });
+
+function cs(c){
+  if(!state[c.id]){
+    state[c.id] = { hp:c.hpMax, temp:0, uses:{}, conds:[], dsS:0, dsF:0 };
+    c.feats.forEach(f=>{ if(f.uses) state[c.id].uses[f.key]=0 });
+    store.save(state);
+  }
+  const s = state[c.id];
+  if(!s.conds) s.conds=[]; if(s.dsS===undefined){s.dsS=0;s.dsF=0} if(s.temp===undefined) s.temp=0;
+  return s;
+}
+function byId(id){ return CHARS.find(c=>c.id===id) }
+function passive(c){ const p=c.skills.find(s=>s[0]==="Perception"); return 10+(p?p[1]:0) }
+
+function logEvent(cid,label,main,kind){
+  const e = {id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    t:Date.now(), cid, label, main, kind:kind||""};
+  state.log.unshift(e);
+  if(state.log.length>40) state.log.length = 40;
+  pendingLog.push(e);
+}
+
+/* ================= ROUTING ================= */
+let advMode = 0; // -1 dis, 0 normal, 1 adv (per-tab, not synced)
+function route(){
+  const h = location.hash;
+  if(h.startsWith("#/c/")) return {v:"char", id:h.slice(4)};
+  if(h==="#/dm") return {v:"dm"};
+  return {v:"picker"};
+}
+window.addEventListener("hashchange", ()=>{ advMode=0; render(); window.scrollTo(0,0); });
+
+const view = document.getElementById("view");
+const tray = document.getElementById("tray");
+
+function render(){
+  const r = route();
+  document.body.classList.toggle("player-mode", r.v==="char");
+  tray.classList.toggle("hidden", r.v!=="char");
+  view.classList.toggle("wide", r.v==="dm");
+  const sub = document.getElementById("subline");
+  if(r.v==="dm") sub.innerHTML = "dungeon master's screen &middot; session 2: The Ninth Lock";
+  else sub.innerHTML = "player companion &middot; session 2: The Ninth Lock";
+  if(r.v==="char"){ const c=byId(r.id); if(c){ renderChar(c); return } }
+  if(r.v==="dm"){ renderDM(); return }
+  renderPicker();
+}
+
+/* ================= PICKER ================= */
+function hpColor(pct){ return pct>50 ? "var(--green)" : pct>25 ? "var(--gold)" : "var(--red)" }
+
+function renderPicker(){
+  view.innerHTML = `<div class="picker">` + CHARS.map(c=>{
+    const s = cs(c);
+    const pct = Math.round(s.hp/c.hpMax*100);
+    const conds = s.conds.length? `<div class="cond-dots">${s.conds.map(x=>`<span class="cond-dot">${x}</span>`).join("")}</div>`:"";
+    return `<button class="pick-card" style="--accent:${c.accent}" onclick="location.hash='#/c/${c.id}'">
+      <div class="sigil">${c.name[0]}</div>
+      <div class="pick-info">
+        <div class="nm">${c.name}</div>
+        <div class="rl">${c.role}</div>
+        <div class="pick-hp">
+          <div class="bar"><div class="fill" style="width:${pct}%;background:${hpColor(pct)}"></div></div>
+          <div class="lbl num">${s.hp}/${c.hpMax}${s.temp?` +${s.temp}`:""} &middot; ${c.player}</div>
+        </div>${conds}
+      </div>
+    </button>`;
+  }).join("") + `
+    <button class="pick-card dm-entry" style="--accent:var(--gold)" onclick="location.hash='#/dm'">
+      <div class="sigil">&#10022;</div>
+      <div class="pick-info">
+        <div class="nm">The Dungeon Master's Screen</div>
+        <div class="rl">every pool, every roll, every secret &mdash; one view</div>
+        <div class="pick-hp"><span class="lbl">best on a laptop or big screen</span></div>
+      </div>
+    </button>
+  </div>
+  <div style="height:14px"></div>
+  <details class="rules">
+    <summary>Quick rules, tap to open</summary>
+    <div class="r">
+      <b>Doing something risky:</b> say what you do, DM picks a skill, tap it here, beat the DC.<br>
+      <b>Attacking:</b> tap Attack. Meets or beats their AC? Tap Damage.<br>
+      <b>Typical DCs:</b> easy 10, normal 12, hard 15, very hard 18.<br>
+      <b>Advantage:</b> flip the ADV/DIS switch before you roll &mdash; both dice roll, the right one counts.<br>
+      <b>At 0 HP:</b> you are down, not dead. Death saves appear on your sheet. Fuego can stabilize you.<br>
+      <b>Sneak Attack:</b> works if an ally is within 5 ft of your target, or you have advantage.
+    </div>
+  </details>`;
+}
+
+/* ================= CHARACTER ================= */
+let current = null;
+function renderChar(c){
+  current = c;
+  const s = cs(c);
+  const pct = s.hp/c.hpMax*100;
+  const down = s.hp===0;
+  view.innerHTML = `
+    <div class="topbar">
+      <button class="back" onclick="location.hash=''">&larr; party</button>
+      <div>
+        <div class="char-name" style="color:${c.accent}">${c.name}</div>
+        <div class="char-role">${c.role} &middot; ${c.player}</div>
+      </div>
+    </div>
+
+    <div class="card ${down?"downed":""}">
+      <h2>Hit Points</h2>
+      <div class="hp-flex">
+        <div class="hp-mid">
+          <div class="hp-num num">${s.hp}<span class="max"> / ${c.hpMax}</span>${s.temp?`<span class="tp num">+${s.temp}</span>`:""}</div>
+          <div class="hp-bar">
+            <div class="hp-fill" style="width:${pct}%;background:${hpColor(pct)}"></div>
+            <div class="hp-temp-fill" style="left:${Math.min(pct,100)}%;width:${Math.min(s.temp/c.hpMax*100,100-pct)}%"></div>
+          </div>
+          <div class="hp-state">${hpStateText(s,c)}</div>
+        </div>
+      </div>
+      <div class="hp-btns">
+        <button class="hp-b dmg num" onclick="dHP('${c.id}',-5)">&minus;5</button>
+        <button class="hp-b dmg num" onclick="dHP('${c.id}',-1)">&minus;1</button>
+        <button class="hp-b heal num" onclick="dHP('${c.id}',1)">+1</button>
+        <button class="hp-b heal num" onclick="dHP('${c.id}',5)">+5</button>
+      </div>
+      <div class="temp-row">
+        temp HP: <b class="num" style="color:var(--gold)">${s.temp}</b>
+        <button class="mini-btn" onclick="dTemp('${c.id}',-1)">&minus;</button>
+        <button class="mini-btn" onclick="dTemp('${c.id}',1)">+</button>
+      </div>
+      ${down? deathSaveHTML(c,s) : ""}
+    </div>
+
+    <div class="card">
+      <h2>Conditions</h2>
+      <div class="chips">
+        ${CONDITIONS.map(k=>`<button class="chip ${s.conds.includes(k)?"on":""}" onclick="toggleCond('${c.id}','${k}')">${k}</button>`).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Quick Stats</h2>
+      <div class="qgrid">
+        <div class="q"><div class="v">${c.ac}</div><div class="k">Armor</div></div>
+        <div class="q"><div class="v">+${c.atk}</div><div class="k">Attack</div></div>
+        <div class="q"><div class="v">${c.dmg}</div><div class="k">Damage</div></div>
+        <div class="q"><div class="v">${c.init}</div><div class="k">Initiative</div></div>
+      </div>
+      <div class="abil">
+        ${Object.entries(c.abil).map(([k,v])=>`<div class="a"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Roll Something</h2>
+      <div class="adv-seg" role="group" aria-label="advantage mode">
+        <button class="${advMode===-1?"on dis":""}" onclick="setAdv(-1)">Disadv.</button>
+        <button class="${advMode===0?"on":""}" onclick="setAdv(0)">Normal</button>
+        <button class="${advMode===1?"on":""}" onclick="setAdv(1)">Advantage</button>
+      </div>
+      <div class="roll-grid">
+        <button class="roll-btn attack" onclick="rollAttack()">
+          <span>Attack<small>${c.dmgLabel}${c.critOn===19?", crits on 19 or 20":""}</small></span>
+          <span class="mod">d20 +${c.atk}</span>
+        </button>
+        <button class="roll-btn attack" onclick="rollDamage()">
+          <span>Damage<small>after a hit</small></span><span class="mod">${c.dmg}</span>
+        </button>
+        ${c.sneak?`<button class="roll-btn attack" onclick="rollSneak()">
+          <span>Sneak Attack bonus<small>ally within 5 ft of target, or advantage</small></span>
+          <span class="mod">+${c.sneak}</span></button>`:""}
+        <button class="roll-btn" onclick="rollInit()"><span>Initiative<small>feeds the DM's tracker</small></span><span class="mod">d20 ${c.init}</span></button>
+        ${c.skills.map(([n,m],i)=>`<button class="roll-btn" onclick="rollSkill(${i})"><span>${n}</span><span class="mod">d20 +${m}</span></button>`).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Abilities</h2>
+      ${c.feats.map(f=>`
+        <div class="feat">
+          <div class="fname">${f.n}</div>
+          <div class="fdesc">${f.d}</div>
+          ${f.uses?`<div class="pips">
+            ${Array.from({length:f.uses},(_,i)=>`<button class="pip ${i<s.uses[f.key]?"used":""}" aria-label="${f.n} use ${i+1}" onclick="togglePip('${c.id}','${f.key}',${i}${f.roll?`,'${f.roll}','${f.n}'`:""})"></button>`).join("")}
+            <span class="plabel">tap to spend${f.roll?", rolls "+f.roll:""}</span>
+          </div>`:""}
+        </div>`).join("")}
+    </div>
+
+    <div class="card">
+      <h2>Signature Gear</h2>
+      <ul class="gear">
+        ${c.gear.map(([g,d])=>`<li><b>${g}</b> <span>: ${d}</span></li>`).join("")}
+      </ul>
+      <div class="joke">${c.joke}</div>
+    </div>
+
+    <button class="reset" onclick="resetChar('${c.id}')">reset HP and abilities (new session)</button>
+  `;
+}
+
+function hpStateText(s,c){
+  const pct = s.hp/c.hpMax*100;
+  return s.hp===0 ? "DOWN. Not dead. Roll death saves below &mdash; or get stabilized, DC 10 Medicine."
+    : pct<=25 ? "Bloodied and scared. Fuego, that is your cue."
+    : pct<=50 ? "Roughed up." : "";
+}
+
+function deathSaveHTML(c,s){
+  const stable = s.dsS>=3, dead = s.dsF>=3;
+  return `<div class="ds">
+    <h2 style="text-align:center">Death Saves</h2>
+    <div class="ds-row"><span class="k">Successes</span>
+      ${[0,1,2].map(i=>`<button class="ds-pip s ${i<s.dsS?"on":""}" aria-label="success ${i+1}" onclick="setDS('${c.id}','dsS',${i})"></button>`).join("")}
+    </div>
+    <div class="ds-row"><span class="k">Failures</span>
+      ${[0,1,2].map(i=>`<button class="ds-pip f ${i<s.dsF?"on":""}" aria-label="failure ${i+1}" onclick="setDS('${c.id}','dsF',${i})"></button>`).join("")}
+    </div>
+    ${!stable&&!dead?`<button class="ds-roll" onclick="rollDeathSave('${c.id}')">Roll death save (d20)</button>`:""}
+    <div class="ds-note">${dead?"Three failures. The Veiled Hand reaches out&hellip; the DM decides what happens next.":stable?"Stable. Unconscious but no longer dying.":"10 or higher: success. 9 or lower: failure. Nat 20: back up with 1 HP. Nat 1: two failures."}</div>
+  </div>`;
+}
+
+/* ================= MUTATIONS ================= */
+function dHP(cid,n){
+  const c = byId(cid), s = cs(c);
+  if(n<0){
+    let dmg = -n;
+    const fromTemp = Math.min(s.temp, dmg);
+    s.temp -= fromTemp; dmg -= fromTemp;
+    const was = s.hp;
+    s.hp = Math.max(0, s.hp - dmg);
+    if(was>0 && s.hp===0){ s.dsS=0; s.dsF=0; logEvent(cid, "Down", `<b>${c.name}</b> drops to 0 HP`, "down"); }
+  } else {
+    if(s.hp===0 && n>0){ s.dsS=0; s.dsF=0; }
+    s.hp = Math.min(c.hpMax, s.hp+n);
+  }
+  commit({cids:[cid]});
+}
+function dTemp(cid,n){ const s=cs(byId(cid)); s.temp=Math.max(0,s.temp+n); commit({cids:[cid]}); }
+function toggleCond(cid,k){
+  const s = cs(byId(cid));
+  const i = s.conds.indexOf(k);
+  if(i>=0) s.conds.splice(i,1); else s.conds.push(k);
+  commit({cids:[cid]});
+}
+function setDS(cid,field,i){
+  const s = cs(byId(cid));
+  s[field] = (s[field]===i+1) ? i : i+1;
+  commit({cids:[cid]});
+}
+function togglePip(cid,key,i,rollStr,label){
+  const c = byId(cid), s = cs(c);
+  if(i >= s.uses[key]){
+    s.uses[key]++;
+    if(rollStr){ const r = rollDice(rollStr); showTray(r.total, `${label}: ${r.detail}`, "spent 1 use", null); logEvent(cid, label, `<b>${c.name}</b> uses ${label}: <b>${r.total}</b>`, ""); }
+    else logEvent(cid, label||key, `<b>${c.name}</b> spends a use`, "");
+  } else { s.uses[key]--; }
+  commit({cids:[cid]});
+}
+function resetChar(cid){
+  const c = byId(cid), s = cs(c);
+  s.hp = c.hpMax; s.temp = 0; s.conds=[]; s.dsS=0; s.dsF=0;
+  Object.keys(s.uses).forEach(k=>s.uses[k]=0);
+  commit({cids:[cid]});
+  showTray("&#10022;","Fresh and ready","HP, conditions and abilities restored",null,"&#10022;");
+}
+function setAdv(m){ advMode=m; render(); }
+
+/* ================= DICE ================= */
+function rollDice(str){
+  const m = str.match(/(\d+)d(\d+)([+-]\d+)?/);
+  const n=+m[1], d=+m[2], mod=m[3]?+m[3]:0;
+  let rolls=[]; for(let i=0;i<n;i++) rolls.push(1+Math.floor(Math.random()*d));
+  const total = rolls.reduce((a,b)=>a+b,0)+mod;
+  return { total, detail:`${rolls.join(" + ")}${mod? (mod>0?" + "+mod:" - "+(-mod)) :""} = ${total}` };
+}
+function d20roll(mod,label,critOn){
+  critOn = critOn||20;
+  const d1 = 1+Math.floor(Math.random()*20);
+  let die = d1, d2 = null;
+  if(advMode!==0){
+    d2 = 1+Math.floor(Math.random()*20);
+    die = advMode===1 ? Math.max(d1,d2) : Math.min(d1,d2);
+  }
+  const total = die+mod;
+  const crit = die>=critOn, fumble = die===1;
+  const modeTxt = advMode===1?" (advantage)":advMode===-1?" (disadvantage)":"";
+  showTray(total, `${label}${modeTxt}: rolled ${die}${mod? (mod>=0?" + "+mod:" - "+(-mod)):""} = ${total}`,
+    crit? (die===20?"NATURAL 20. Tell the table.":"CRITICAL HIT RANGE.") : fumble? "Natural 1. It will be funny later." : "",
+    crit?"crit":fumble?"fumble":null, d1, d2, die);
+  logEvent(current.id, label, `<b>${current.name}</b> &middot; ${label}${modeTxt}: <b>${total}</b> <span style="opacity:.7">(d20: ${die}${mod?(mod>=0?" +"+mod:" &minus;"+(-mod)):""})</span>`, crit?"crit":fumble?"fumble":"");
+  if(label==="Initiative"){ state.initRolls[current.id]=total; }
+  commit({combat: label==="Initiative"});
+  return {die,total,crit,fumble};
+}
+function rollSkill(i){ const [n,m]=current.skills[i]; d20roll(m,n); }
+function rollAttack(){ d20roll(current.atk,"Attack",current.critOn); }
+function rollInit(){ d20roll(parseInt(current.init),"Initiative"); }
+function rollDamage(){
+  const r=rollDice(current.dmg);
+  showTray(r.total,"Damage: "+r.detail,"add sneak attack if it applies",null);
+  logEvent(current.id,"Damage",`<b>${current.name}</b> deals <b>${r.total}</b> damage`,"");
+  commit({});
+}
+function rollSneak(){
+  const r=rollDice(current.sneak);
+  showTray(r.total,"Sneak Attack bonus: "+r.detail,"add this on top of damage",null);
+  logEvent(current.id,"Sneak Attack",`<b>${current.name}</b> sneak attack bonus: <b>+${r.total}</b>`,"");
+  commit({});
+}
+function rollDeathSave(cid){
+  const c = byId(cid), s = cs(c);
+  const die = 1+Math.floor(Math.random()*20);
+  let msg;
+  if(die===20){ s.hp=1; s.dsS=0; s.dsF=0; msg=`NAT 20 &mdash; <b>${c.name}</b> surges back with 1 HP!`; showTray(20,"Death save: NATURAL 20","You're back. 1 HP. Make it count.","crit",20); }
+  else if(die===1){ s.dsF=Math.min(3,s.dsF+2); msg=`<b>${c.name}</b> death save: nat 1, two failures`; showTray(1,"Death save: natural 1","Two failures.","fumble",1); }
+  else if(die>=10){ s.dsS=Math.min(3,s.dsS+1); msg=`<b>${c.name}</b> death save: <b>${die}</b>, success`; showTray(die,`Death save: ${die} — success`, s.dsS>=3?"Three successes. Stable.":"", null, die); }
+  else { s.dsF=Math.min(3,s.dsF+1); msg=`<b>${c.name}</b> death save: <b>${die}</b>, failure`; showTray(die,`Death save: ${die} — failure`, s.dsF>=3?"Three failures. DM's call.":"", "fumble", die); }
+  logEvent(cid,"Death save",msg, die===20?"crit":die===1?"fumble":"");
+  commit({cids:[cid]});
+}
+function plainD20(){
+  const die=1+Math.floor(Math.random()*20);
+  showTray(die,"Plain d20: "+die, die===20?"NATURAL 20":die===1?"oof":"", die===20?"crit":die===1?"fumble":null, die);
+  if(current && route().v==="char"){ logEvent(current.id,"d20",`<b>${current.name}</b> rolls a plain d20: <b>${die}</b>`, die===20?"crit":die===1?"fumble":""); commit({}); }
+}
+
+function showTray(big, main, small, mood, face1, face2, kept){
+  const box=document.getElementById("dieBox"), box2=document.getElementById("dieBox2");
+  [box,box2].forEach(b=>{ b.classList.remove("crit","fumble","rolling","dropped") });
+  void box.offsetWidth;
+  box.classList.add("rolling");
+  document.getElementById("dieFace").textContent = (face1!==undefined&&face1!==null)? face1 : big;
+  if(face2!==undefined&&face2!==null){
+    box2.classList.remove("hidden"); box2.classList.add("rolling");
+    document.getElementById("dieFace2").textContent = face2;
+    if(kept!==undefined){
+      if(face1!==kept && face2===kept){ box.classList.add("dropped"); if(mood) box2.classList.add(mood); }
+      else { box2.classList.add("dropped"); if(mood) box.classList.add(mood); }
+    }
+  } else {
+    box2.classList.add("hidden");
+    if(mood) box.classList.add(mood);
+  }
+  document.getElementById("trayBig").innerHTML = main;
+  document.getElementById("traySmall").textContent = small||"";
+  if(navigator.vibrate) navigator.vibrate(18);
+}
+
+/* ================= DM SCREEN ================= */
+function fmtTime(t){
+  const d = new Date(t), now = Date.now();
+  const mins = Math.floor((now-t)/60000);
+  if(mins<1) return "now";
+  if(mins<60) return mins+"m";
+  return d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0");
+}
+
+function renderDM(){
+  const totals = CHARS.reduce((a,c)=>{ const s=cs(c); a.hp+=s.hp; a.max+=c.hpMax; return a },{hp:0,max:0});
+  const partyPct = Math.round(totals.hp/totals.max*100);
+  const downed = CHARS.filter(c=>cs(c).hp===0);
+  const bloodied = CHARS.filter(c=>{const s=cs(c);return s.hp>0 && s.hp/c.hpMax<=.25});
+
+  view.innerHTML = `
+    <div class="topbar">
+      <button class="back" onclick="location.hash=''">&larr; party</button>
+      <div>
+        <div class="char-name" style="color:var(--gold)">The DM's Screen</div>
+        <div class="char-role">live pools for the whole table &middot; updates as they happen</div>
+      </div>
+    </div>
+
+    <div class="dm-vitals">
+      <div class="stat">Party HP<b class="num">${totals.hp} / ${totals.max}</b></div>
+      <div class="party-bar"><div class="party-fill" style="width:${partyPct}%;background:${hpColor(partyPct)}"></div></div>
+      <div class="stat">Down<b class="num" style="color:${downed.length?"var(--red)":"var(--text)"}">${downed.length}</b></div>
+      ${downed.length?`<span class="alert">${downed.map(c=>c.name).join(", ")} dying!</span>`
+        :bloodied.length?`<span class="alert" style="color:#d4b46a">${bloodied.map(c=>c.name).join(", ")} bloodied</span>`:""}
+    </div>
+
+    <div class="dm-body">
+      <div class="dm-main">
+        <div class="dm-grid">
+          ${CHARS.map(c=>dmCard(c)).join("")}
+        </div>
+        <button class="reset" onclick="longRest()">long rest &mdash; restore the whole party (new session)</button>
+        <div class="dm-note" style="text-align:center;margin:-10px 0 24px">
+          This screen is live across every device at the table: when a player changes HP, rolls, or spends an ability on their phone, it appears here within a second or two &mdash; and your changes push back to their sheets. The green dot up top means the table channel is connected.
+        </div>
+      </div>
+
+      <aside class="dm-rail">
+        <div class="card">
+          <h2>Initiative Order</h2>
+          ${initHTML()}
+          <div class="init-add">
+            <input class="nmi" id="npcName" placeholder="Cultist, Warden of the Lock&hellip;" maxlength="30">
+            <input class="sci num" id="npcInit" placeholder="init" inputmode="numeric" maxlength="2">
+            <button class="mini-btn" onclick="addNPC()">add</button>
+          </div>
+          <div class="init-btns">
+            <button class="go" onclick="nextTurn()">Next turn &rarr;</button>
+            <button onclick="clearInit()">Clear order</button>
+          </div>
+          <div class="dm-note">Player initiative fills in automatically when they tap Initiative on their sheets. Add monsters and NPCs above.</div>
+        </div>
+
+        <div class="card">
+          <h2>Live Roll Feed</h2>
+          <div class="feed">
+            ${state.log.length? state.log.map(e=>{
+              const c = byId(e.cid);
+              return `<div class="feed-item ${e.kind}">
+                <span class="who" style="color:${c?c.accent:"var(--gold)"}">${c?c.name.split(" ")[0]:"—"}</span>
+                <span class="what">${e.main}</span>
+                <span class="when num">${fmtTime(e.t)}</span>
+              </div>`;
+            }).join("") : `<div class="feed-empty">No rolls yet. Everything the party rolls lands here, newest first.</div>`}
+          </div>
+        </div>
+      </aside>
+    </div>
+  `;
+}
+
+function dmCard(c){
+  const s = cs(c);
+  const pct = s.hp/c.hpMax*100;
+  const down = s.hp===0;
+  const featUses = c.feats.filter(f=>f.uses);
+  return `<div class="dm-card ${down?"is-down downed":""}" style="--accent:${c.accent}">
+    <div class="dm-head">
+      <span class="nm">${c.name}</span>
+      <span class="meta">AC ${c.ac} &middot; init ${c.init} &middot; PP ${passive(c)}</span>
+    </div>
+    <div class="dm-hp-row">
+      <span class="hpn" style="color:${down?"var(--red)":"var(--text)"}">${s.hp}</span>
+      <span class="hpm">/ ${c.hpMax}</span>
+      ${s.temp?`<span class="tmp">+${s.temp} temp</span>`:""}
+    </div>
+    <div class="dm-bar">
+      <div class="dm-fill" style="width:${pct}%;background:${hpColor(pct)}"></div>
+      <div class="hp-temp-fill" style="left:${Math.min(pct,100)}%;width:${Math.min(s.temp/c.hpMax*100,100-pct)}%"></div>
+    </div>
+    <div class="dm-ctl">
+      <button class="dmg num" onclick="dHP('${c.id}',-5)">&minus;5</button>
+      <button class="dmg num" onclick="dHP('${c.id}',-1)">&minus;1</button>
+      <button class="heal num" onclick="dHP('${c.id}',1)">+1</button>
+      <button class="heal num" onclick="dHP('${c.id}',5)">+5</button>
+      <button class="tmpb num" onclick="dTemp('${c.id}',1)">+T</button>
+      <button class="tmpb num" onclick="dTemp('${c.id}',-1)">&minus;T</button>
+    </div>
+    ${down?`<div class="dm-ds">DEATH SAVES&nbsp;
+      ${[0,1,2].map(i=>`<span class="d ${i<s.dsS?"s":""}"></span>`).join("")}&nbsp;/&nbsp;
+      ${[0,1,2].map(i=>`<span class="d ${i<s.dsF?"f":""}"></span>`).join("")}</div>`:""}
+    ${featUses.length?`<div class="dm-uses">${featUses.map(f=>`<span class="dm-use">${f.n.replace(/\s*\(.*\)/,"")}
+      <span class="dots">${Array.from({length:f.uses},(_,i)=>`<span class="d ${i<s.uses[f.key]?"used":""}"></span>`).join("")}</span></span>`).join("")}</div>`:""}
+    <div class="dm-conds">${CONDITIONS.map(k=>`<button class="chip ${s.conds.includes(k)?"on":""}" onclick="toggleCond('${c.id}','${k}')">${k}</button>`).join("")}</div>
+  </div>`;
+}
+
+function initEntries(){
+  const rows = [];
+  CHARS.forEach(c=>{ if(state.initRolls[c.id]!==undefined) rows.push({name:c.name, score:state.initRolls[c.id], accent:c.accent, tag:"PC", key:"pc:"+c.id}) });
+  state.npcs.forEach((n,i)=> rows.push({name:n.name, score:n.score, accent:"var(--dim)", tag:"NPC", key:"npc:"+i}));
+  rows.sort((a,b)=>b.score-a.score);
+  return rows;
+}
+function initHTML(){
+  const rows = initEntries();
+  if(!rows.length) return `<div class="feed-empty">Empty. Have the table tap Initiative, or add NPCs below.</div>`;
+  return `<div class="init-list">${rows.map((r,i)=>`
+    <div class="init-row ${i===state.turnIdx?"active":""}">
+      <span class="score">${r.score}</span>
+      <span class="inm" style="color:${r.accent}">${r.name}</span>
+      <span class="tag">${r.tag}${i===state.turnIdx?" &middot; acting":""}</span>
+      <button class="x" aria-label="remove ${r.name}" onclick="removeInit('${r.key}')">&times;</button>
+    </div>`).join("")}</div>`;
+}
+function addNPC(){
+  const name = document.getElementById("npcName").value.trim();
+  const score = parseInt(document.getElementById("npcInit").value,10);
+  if(!name || isNaN(score)) return;
+  state.npcs.push({name:name.replace(/[<>&]/g,""), score});
+  commit({combat:true});
+}
+function removeInit(key){
+  if(key.startsWith("npc:")) state.npcs.splice(+key.slice(4),1);
+  else delete state.initRolls[key.slice(3)];
+  if(state.turnIdx >= initEntries().length) state.turnIdx = -1;
+  commit({combat:true});
+}
+function nextTurn(){
+  const n = initEntries().length;
+  if(!n) return;
+  state.turnIdx = (state.turnIdx+1) % n;
+  commit({combat:true});
+}
+function clearInit(){
+  state.npcs = []; state.initRolls = {}; state.turnIdx = -1;
+  commit({combat:true});
+}
+function longRest(){
+  CHARS.forEach(c=>{
+    const s = cs(c);
+    s.hp = c.hpMax; s.temp = 0; s.conds = []; s.dsS = 0; s.dsF = 0;
+    Object.keys(s.uses).forEach(k=>s.uses[k]=0);
+  });
+  state.log = []; state.npcs = []; state.initRolls = {}; state.turnIdx = -1;
+  commit({cids:CHARS.map(c=>c.id), combat:true, clearLog:true});
+}
+
+render();
+connectLive();
+announce();
+setInterval(announce, 240000);
+window.addEventListener("pagehide", ()=>{ if(es) es.close(); });
+</script>
+
+</html>
